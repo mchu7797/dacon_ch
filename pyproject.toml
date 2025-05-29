@@ -1,0 +1,29 @@
+[project]
+name = "ai-challenge"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "albumentations>=2.0.8",
+    "pandas>=2.2.3",
+    "scikit-learn>=1.6.1",
+    "timm>=1.0.15",
+    "torch>=2.7.0",
+    "torchvision>=0.22.0",
+    "tqdm>=4.67.1",
+    "wandb>=0.19.11",
+]
+
+[[tool.uv.index]]
+name = "pytorch"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
+  { index = "pytorch", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
