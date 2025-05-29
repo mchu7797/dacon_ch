@@ -11,9 +11,9 @@ from sklearn.metrics import log_loss, accuracy_score
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from typing import Tuple, Dict
 
-from .config import Config
-from .car_dataset import CarDataset
-from .model import ImprovedModel
+from config import Config
+from car_dataset import CarDataset
+from model import ImprovedModel
 
 
 def set_seed(seed: int):
