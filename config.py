@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import List, Dict, Any
 import os
+import multiprocessing
+import torch
 
 
 @dataclass
@@ -32,6 +34,19 @@ class Config:
     n_folds: int = 5
 
     def __post_init__(self):
+        # 시스템에 따른 워커 수 및 배치 크기 조정
+        max_workers = min(4, multiprocessing.cpu_count())
+        self.num_workers = max_workers if torch.cuda.is_available() else 0
+
+        # GPU 메모리에 따른 배치 크기 조정
+        if torch.cuda.is_available():
+            gpu_memory_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+            if gpu_memory_gb < 8:
+                self.batch_size = max(4, self.batch_size // 2)
+                print(
+                    f"⚠️ Low GPU memory detected ({gpu_memory_gb:.1f}GB), reducing batch size to {self.batch_size}"
+                )
+
         if self.ensemble_models is None:
             self.ensemble_models = [
                 {

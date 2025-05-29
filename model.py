@@ -3,6 +3,7 @@ import torch.nn as nn
 import timm
 import numpy as np
 from typing import List, Dict, Any
+import gc
 
 
 class Model(nn.Module):
@@ -26,14 +27,8 @@ class Model(nn.Module):
             global_pool="",
         )
 
-        # Feature dimension 자동 계산
-        with torch.no_grad():
-            dummy_input = torch.randn(1, 3, img_size, img_size)
-            features = self.backbone(dummy_input)
-            if len(features.shape) == 4:  # [B, C, H, W]
-                self.feature_dim = features.shape[1]
-            else:  # [B, C]
-                self.feature_dim = features.shape[1]
+        # Feature dimension 안전한 계산
+        self.feature_dim = self._get_feature_dim_safely(img_size)
 
         # Global pooling
         self.global_pool = nn.AdaptiveAvgPool2d(1)
@@ -46,6 +41,51 @@ class Model(nn.Module):
             nn.Dropout(dropout_rate / 2),
             nn.Linear(1024, num_classes),
         )
+
+    def _get_feature_dim_safely(self, img_size: int) -> int:
+        """GPU 메모리 절약을 위한 안전한 feature dimension 계산"""
+        with torch.no_grad():
+            dummy_input = torch.randn(1, 3, img_size, img_size)
+
+            try:
+                # GPU에서 시도
+                if torch.cuda.is_available():
+                    features = self.backbone(dummy_input.cuda())
+                    feature_dim = (
+                        features.shape[1]
+                        if len(features.shape) == 4
+                        else features.shape[1]
+                    )
+                    # 즉시 메모리 정리
+                    del features, dummy_input
+                    torch.cuda.empty_cache()
+                else:
+                    features = self.backbone(dummy_input)
+                    feature_dim = (
+                        features.shape[1]
+                        if len(features.shape) == 4
+                        else features.shape[1]
+                    )
+                    del features, dummy_input
+
+                return feature_dim
+
+            except RuntimeError as e:
+                if "out of memory" in str(e):
+                    print("⚠️ GPU OOM during feature dim calculation, using CPU")
+                    torch.cuda.empty_cache()
+                    # CPU에서 계산
+                    features = self.backbone(dummy_input.cpu())
+                    feature_dim = (
+                        features.shape[1]
+                        if len(features.shape) == 4
+                        else features.shape[1]
+                    )
+                    del features, dummy_input
+                    gc.collect()
+                    return feature_dim
+                else:
+                    raise e
 
     def forward(self, x):
         # Feature extraction
@@ -79,24 +119,34 @@ class Ensemble:
         for i, (config, model_path) in enumerate(zip(self.model_configs, model_paths)):
             print(f"Loading model {i + 1}: {config['name']}")
 
-            # 모델 생성
-            model = Model(
-                num_classes=num_classes,
-                model_name=config["model_name"],
-                pretrained=False,  # 체크포인트에서 로드하므로 False
-                dropout_rate=config["dropout_rate"],
-            )
+            try:
+                # 모델 생성
+                model = Model(
+                    num_classes=num_classes,
+                    model_name=config["model_name"],
+                    pretrained=False,  # 체크포인트에서 로드하므로 False
+                    dropout_rate=config["dropout_rate"],
+                )
 
-            # 체크포인트 로드
-            checkpoint = torch.load(model_path, map_location=self.device)
-            model.load_state_dict(checkpoint["model_state_dict"])
-            model.to(self.device)
-            model.eval()
+                # 체크포인트 로드
+                checkpoint = torch.load(model_path, map_location=self.device)
+                model.load_state_dict(checkpoint["model_state_dict"])
+                model.to(self.device)
+                model.eval()
 
-            self.models.append(model)
-            self.weights.append(config["weight"])
+                self.models.append(model)
+                self.weights.append(config["weight"])
 
-            print(f"✅ {config['name']} loaded successfully")
+                print(f"✅ {config['name']} loaded successfully")
+
+                # 메모리 정리
+                del checkpoint
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+
+            except Exception as e:
+                print(f"❌ Failed to load {config['name']}: {e}")
+                raise e
 
         # 가중치 정규화
         total_weight = sum(self.weights)
@@ -111,24 +161,42 @@ class Ensemble:
 
         with torch.no_grad():
             for batch_idx, (images, _) in enumerate(dataloader):
-                images = images.to(self.device)
-                batch_predictions = []
+                try:
+                    images = images.to(self.device)
+                    batch_predictions = []
 
-                # 각 모델의 예측 수집
-                for model in self.models:
-                    outputs = model(images)
-                    probs = torch.softmax(outputs, dim=1)
-                    batch_predictions.append(probs.cpu().numpy())
+                    # 각 모델의 예측 수집
+                    for model in self.models:
+                        outputs = model(images)
+                        probs = torch.softmax(outputs, dim=1)
+                        batch_predictions.append(probs.cpu().numpy())
 
-                # 가중 평균으로 앙상블
-                weighted_pred = np.zeros_like(batch_predictions[0])
-                for pred, weight in zip(batch_predictions, self.weights):
-                    weighted_pred += pred * weight
+                    # 가중 평균으로 앙상블
+                    weighted_pred = np.zeros_like(batch_predictions[0])
+                    for pred, weight in zip(batch_predictions, self.weights):
+                        weighted_pred += pred * weight
 
-                all_predictions.append(weighted_pred)
+                    all_predictions.append(weighted_pred)
 
-                if batch_idx % 10 == 0:
-                    print(f"  Processed batch {batch_idx + 1}/{len(dataloader)}")
+                    # 메모리 정리
+                    del images, batch_predictions, weighted_pred
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+
+                    if batch_idx % 10 == 0:
+                        print(f"  Processed batch {batch_idx + 1}/{len(dataloader)}")
+
+                except RuntimeError as e:
+                    if "out of memory" in str(e):
+                        print(
+                            f"⚠️ OOM at batch {batch_idx}, clearing cache and retrying..."
+                        )
+                        torch.cuda.empty_cache()
+                        gc.collect()
+                        # 재시도
+                        continue
+                    else:
+                        raise e
 
         return np.vstack(all_predictions)
 
@@ -139,9 +207,24 @@ class Ensemble:
 
         with torch.no_grad():
             for images, _ in dataloader:
-                images = images.to(self.device)
-                outputs = model(images)
-                probs = torch.softmax(outputs, dim=1)
-                all_predictions.append(probs.cpu().numpy())
+                try:
+                    images = images.to(self.device)
+                    outputs = model(images)
+                    probs = torch.softmax(outputs, dim=1)
+                    all_predictions.append(probs.cpu().numpy())
+
+                    # 메모리 정리
+                    del images, outputs, probs
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+
+                except RuntimeError as e:
+                    if "out of memory" in str(e):
+                        print("⚠️ OOM in single model prediction, clearing cache...")
+                        torch.cuda.empty_cache()
+                        gc.collect()
+                        continue
+                    else:
+                        raise e
 
         return np.vstack(all_predictions)
