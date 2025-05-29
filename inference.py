@@ -13,7 +13,6 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     config = Config()
 
-    # 수정: transform 추가 (필수!)
     val_transform = transforms.Compose(
         [
             transforms.Resize((config.image_size, config.image_size)),
