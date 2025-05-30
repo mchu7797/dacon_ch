@@ -5,7 +5,21 @@ import pandas as pd
 
 from config import get_config
 from datasets import CarDataset
+from models import get_models
 from transforms import get_val_transform
+
+
+def predict(models, images):
+    all_predictions = []
+
+    with torch.no_grad():
+        for model in models:
+            outputs = model(images)
+            probabilities = torch.softmax(outputs, dim=1)
+            all_predictions.append(probabilities)
+
+    ensemble_predictions = torch.mean(torch.stack(all_predictions), dim=0)
+    return ensemble_predictions
 
 
 def main():
@@ -24,20 +38,20 @@ def main():
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
 
     # TODO: 앙상블 추가
-    model = CarModel(num_classes=len(class_names))
-    model.load_state_dict(torch.load("best_model.pth", map_location=device))
-    model.to(device)
+    models = get_models(num_classes=len(class_names))
 
-    model.eval()
+    for model in models:
+        model.to(device)
+        model.eval()
+
     results = []
 
     with torch.no_grad():
         for images in tqdm(test_loader, desc="Evaluating"):
             images = images.to(device)
-            outputs = model(images)
-            probabilities = torch.softmax(outputs, dim=1)
+            probablities = predict(models, images)
 
-            for prob in probabilities.cpu():
+            for prob in probablities.cpu():
                 result = {
                     class_names[i]: prob[i].item() for i in range(len(class_names))
                 }
