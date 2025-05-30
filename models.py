@@ -1,7 +1,7 @@
 import timm
 
 
-def get_models(*, num_classes: int):
+def get_models(*, num_classes: int) -> list:
     models = []
 
     models.append(
@@ -25,3 +25,5 @@ def get_models(*, num_classes: int):
             num_classes=num_classes,
         )
     )
+
+    return models

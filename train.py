@@ -93,7 +93,7 @@ def train_model(
             print(f"Best model saved with Log Loss: {best_logloss:.4f}")
 
 
-def main():
+def train():
     config = get_config()
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -125,22 +125,14 @@ def main():
             config.train_directory,
             transform=get_val_transform(config.image_size, config.mean, config.std),
         ),
-        indices=train_idx,
+        indices=val_idx,
     )
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=config.batch_size,
-        shuffle=True,
-        num_workers=4,
-        pin_memory=True,
+        train_dataset, batch_size=config.batch_size, shuffle=True
     )
     val_loader = torch.utils.data.DataLoader(
-        val_dataset,
-        batch_size=config.batch_size,
-        shuffle=False,
-        num_workers=4,
-        pin_memory=True,
+        val_dataset, batch_size=config.batch_size, shuffle=False
     )
 
     models = get_models(num_classes=len(class_names))
@@ -152,4 +144,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    train()
