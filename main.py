@@ -5,9 +5,9 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import log_loss
 from tqdm import tqdm
-import timm
 
 from config import Config, get_config
+from models import get_models
 from datasets import CarDataset
 from utils import fix_random_seed, show_dataset_info
 from transforms import get_train_transform, get_val_transform
@@ -86,7 +86,10 @@ def train_model(
 
         if val_logloss < best_logloss:
             best_logloss = val_logloss
-            torch.save(model.state_dict(), "best_model.pth")
+            torch.save(
+                model.state_dict(),
+                f"{config.model_directory}/best_{model.__class__.__name__}.pth",
+            )
             print(f"Best model saved with Log Loss: {best_logloss:.4f}")
 
 
@@ -140,29 +143,7 @@ def main():
         pin_memory=True,
     )
 
-    models = []
-
-    models.append(
-        timm.create_model(
-            "timm/convnext_large.fb_in22k_ft_in1k",
-            pretrained=True,
-            num_classes=len(class_names),
-        )
-    )
-    models.append(
-        timm.create_model(
-            "timm/tf_efficientnetv2_l.in21k_ft_in1k",
-            pretrained=True,
-            num_classes=len(class_names),
-        )
-    )
-    models.append(
-        timm.create_model(
-            "timm/regnety_120.sw_in12k_ft_in1k",
-            pretrained=True,
-            num_classes=len(class_names),
-        )
-    )
+    models = get_models(model_classes=len(class_names))
 
     for model in models:
         model.to(device)

@@ -3,7 +3,6 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import pandas as pd
 
-from model import CarModel
 from config import get_config
 from datasets import CarDataset
 from transforms import get_val_transform
@@ -24,6 +23,7 @@ def main():
     )
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
 
+    # TODO: 앙상블 추가
     model = CarModel(num_classes=len(class_names))
     model.load_state_dict(torch.load("best_model.pth", map_location=device))
     model.to(device)

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class Config:
     train_directory: str = "train"
     test_directory: str = "test"
+    model_directory: str = "models"
 
     image_size: int = 224
     batch_size: int = 8
