@@ -143,7 +143,7 @@ def main():
         pin_memory=True,
     )
 
-    models = get_models(model_classes=len(class_names))
+    models = get_models(num_classes=len(class_names))
 
     for model in models:
         model.to(device)
