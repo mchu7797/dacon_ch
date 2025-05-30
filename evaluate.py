@@ -1,3 +1,4 @@
+import os
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -7,6 +8,31 @@ from config import get_config
 from datasets import CarDataset
 from models import get_models
 from transforms import get_val_transform
+
+
+def load_trained_models(config, num_classes, device):
+    base_models = get_models(num_classes=num_classes)
+    loaded_models = []
+
+    for model in base_models:
+        model_name = model.__class__.__name__
+        model_path = f"{config.model_directory}/best_{model_name}.pth"
+
+        if os.path.exists(model_path):
+            model.load_state_dict(torch.load(model_path, map_location=device))
+            model.to(device)
+            model.eval()
+            loaded_models.append(model)
+            print(f"Loaded model: {model_name} from {model_path}")
+        else:
+            model.to(device)
+            model.eval()
+            loaded_models.append(model)
+            print(
+                f"Model {model_name} not found at {model_path}, using untrained model."
+            )
+
+    return loaded_models
 
 
 def predict(models, images):
@@ -37,21 +63,18 @@ def main():
     )
     test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
 
-    # TODO: 앙상블 추가
-    models = get_models(num_classes=len(class_names))
-
-    for model in models:
-        model.to(device)
-        model.eval()
+    models = load_trained_models(config, num_classes=len(class_names), device=device)
+    print(f"Number of classes: {len(class_names)}")
+    print(f"Number of models loaded: {len(models)}")
 
     results = []
 
     with torch.no_grad():
         for images in tqdm(test_loader, desc="Evaluating"):
             images = images.to(device)
-            probablities = predict(models, images)
+            probabilities = predict(models, images)
 
-            for prob in probablities.cpu():
+            for prob in probabilities.cpu():
                 result = {
                     class_names[i]: prob[i].item() for i in range(len(class_names))
                 }

@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 from torch.utils.data import Subset
@@ -86,6 +87,9 @@ def train_model(
 
         if val_logloss < best_logloss:
             best_logloss = val_logloss
+
+            os.makedirs(config.model_directory, exist_ok=True)
+
             torch.save(
                 model.state_dict(),
                 f"{config.model_directory}/best_{model.__class__.__name__}.pth",
@@ -96,6 +100,11 @@ def train_model(
 def train():
     config = get_config()
     device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    print(f"Using device: {device}")
+    if device == "cuda":
+        print(f"GPU: {torch.cuda.get_device_name()}")
+        print(f"Memory allocated: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
 
     fix_random_seed(config.seed)
 
