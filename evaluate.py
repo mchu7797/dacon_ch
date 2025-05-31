@@ -48,6 +48,28 @@ def predict(models, images):
     return ensemble_predictions
 
 
+def predict_with_tta(models, tta_images):
+    batch_size, num_tta, _, _, _ = tta_images.shape
+    all_predictions = []
+
+    with torch.no_grad():
+        for model in models:
+            tta_predictions = []
+
+            for tta_idx in range(num_tta):
+                images = tta_images[:, tta_idx, :, :, :]
+                outputs = model(images)
+                probabilities = torch.softmax(outputs, dim=1)
+                tta_predictions.append(probabilities)
+
+            average_prediction = torch.mean(torch.stack(tta_predictions), dim=0)
+            all_predictions.append(average_prediction)
+
+    ensemble_predictions = torch.mean(torch.stack(all_predictions), dim=0)
+    return ensemble_predictions
+
+
+
 def evaluate():
     config = get_config()
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -63,7 +85,7 @@ def evaluate():
             tta_transforms=tta_transform,
             is_test=True,
         )
-        batch_size = max(1, config.batch_size // 4)
+        batch_size = max(1, config.batch_size // config.tta_batch_size_divisor)
     else:
         test_dataset = CarDataset(
             config.test_directory,
@@ -82,7 +104,11 @@ def evaluate():
     with torch.no_grad():
         for images in tqdm(test_loader, desc="Evaluating"):
             images = images.to(device)
-            probabilities = predict(models, images)
+
+            if config.use_tta:
+                probabilities = predict_with_tta(models, images)
+            else:
+                probabilities = predict(models, images)
 
             for prob in probabilities.cpu():
                 result = {

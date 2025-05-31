@@ -55,7 +55,7 @@ def get_tta_transforms(
         transforms.Compose(
             [
                 transforms.Resize((image_size, image_size)),
-                transforms.RandomRotation(degrees=5, fill=0),
+                transforms.RandomRotation(degrees=(5, 5), fill=0),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std),
             ]
@@ -64,7 +64,7 @@ def get_tta_transforms(
         transforms.Compose(
             [
                 transforms.Resize((image_size, image_size)),
-                transforms.RandomRotation(degrees=-5, fill=0),
+                transforms.RandomRotation(degrees=(-5, -5), fill=0),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std),
             ]
