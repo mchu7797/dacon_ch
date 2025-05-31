@@ -8,16 +8,16 @@ class Config:
     model_directory: str = "models"
 
     early_stopping_enabled: bool = True
-    early_stopping_patience: int = 5
+    early_stopping_patience: int = 10
     early_stopping_minimum_delta: float = 0.0001
 
-    use_tta: bool = True
+    use_tta: bool = False
     tta_batch_size_divisor: int = 4
 
     image_size: int = 224
-    batch_size: int = 8
-    epochs: int = 1
-    learning_rate: float = 0.001
+    batch_size: int = 32
+    epochs: int = 50
+    learning_rate: float = 1e-4
     seed: int = 42
 
     mean: tuple = (0.485, 0.456, 0.406)
