@@ -23,6 +23,7 @@ def train_model(
     device_name: str,
 ):
     best_logloss = float("inf")
+    patience_counts = 0
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
@@ -85,8 +86,11 @@ def train_model(
             f"Log Loss: {val_logloss:.4f}"
         )
 
-        if val_logloss < best_logloss:
+        improvement = best_logloss - val_logloss
+
+        if improvement > config.early_stopping_minimum_delta:
             best_logloss = val_logloss
+            patience_counts = 0
 
             os.makedirs(config.model_directory, exist_ok=True)
 
@@ -95,6 +99,13 @@ def train_model(
                 f"{config.model_directory}/best_{model.__class__.__name__}.pth",
             )
             print(f"Best model saved with Log Loss: {best_logloss:.4f}")
+        elif config.early_stopping_enabled:
+            patience_counts += 1
+            print(f"No improvement. Patience [{patience_counts}/{config.early_stopping_patience}]")
+
+            if patience_counts >= config.early_stopping_patience:
+                print("Early stopping triggered. stopping")
+                return
 
 
 def train():

@@ -7,6 +7,10 @@ class Config:
     test_directory: str = "test"
     model_directory: str = "models"
 
+    early_stopping_enabled: bool = True
+    early_stopping_patience: int = 5
+    early_stopping_minimum_delta: float = 0.0001
+
     image_size: int = 224
     batch_size: int = 8
     epochs: int = 1
