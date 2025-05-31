@@ -3,6 +3,7 @@ name = "ai-challenge"
 version = "0.0.1"
 requires-python = ">=3.13"
 dependencies = [
+    "gdown>=5.2.0",
     "pandas>=2.2.3",
     "scikit-learn>=1.6.1",
     "timm>=1.0.15",
