@@ -69,7 +69,10 @@ def train_model(
                 correct += (predicted == labels).sum().item()
                 total += labels.size(0)
 
-                all_probs.extend(torch.softmax(outputs, dim=1).cpu().numpy())
+                probs = torch.softmax(outputs, dim=1)
+                probs = probs / probs.sum(dim=1, keepdim=True)
+
+                all_probs.extend(probs.cpu().numpy())
                 all_labels.extend(labels.cpu().numpy())
 
         average_val_loss = val_loss / len(val_loader)
@@ -101,7 +104,9 @@ def train_model(
             print(f"Best model saved with Log Loss: {best_logloss:.4f}")
         elif config.early_stopping_enabled:
             patience_counts += 1
-            print(f"No improvement. Patience [{patience_counts}/{config.early_stopping_patience}]")
+            print(
+                f"No improvement. Patience [{patience_counts}/{config.early_stopping_patience}]"
+            )
 
             if patience_counts >= config.early_stopping_patience:
                 print("Early stopping triggered. stopping")

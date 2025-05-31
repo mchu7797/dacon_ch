@@ -7,7 +7,7 @@ import pandas as pd
 from config import get_config
 from datasets import CarDataset
 from models import get_models
-from transforms import get_val_transform
+from transforms import get_val_transform, get_tta_transforms
 
 
 def load_trained_models(config, num_classes, device):
@@ -48,7 +48,7 @@ def predict(models, images):
     return ensemble_predictions
 
 
-def main():
+def evaluate():
     config = get_config()
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -56,13 +56,23 @@ def main():
     full_dataset = CarDataset(config.train_directory, transform=None)
     class_names = full_dataset.classes
 
-    test_dataset = CarDataset(
-        config.test_directory,
-        transform=get_val_transform(config.image_size, config.mean, config.std),
-        is_test=True,
-    )
-    test_loader = DataLoader(test_dataset, batch_size=config.batch_size, shuffle=False)
+    if config.use_tta:
+        tta_transform = get_tta_transforms(config.image_size, config.mean, config.std)
+        test_dataset = CarDataset(
+            config.test_directory,
+            tta_transforms=tta_transform,
+            is_test=True,
+        )
+        batch_size = max(1, config.batch_size // 4)
+    else:
+        test_dataset = CarDataset(
+            config.test_directory,
+            transform=get_val_transform(config.image_size, config.mean, config.std),
+            is_test=True,
+        )
+        batch_size = config.batch_size
 
+    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     models = load_trained_models(config, num_classes=len(class_names), device=device)
     print(f"Number of classes: {len(class_names)}")
     print(f"Number of models loaded: {len(models)}")
@@ -94,4 +104,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    evaluate()

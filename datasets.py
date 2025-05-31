@@ -1,13 +1,22 @@
 import os
+import torch
 from torch.utils.data import Dataset
 from PIL import Image
 
 
 class CarDataset(Dataset):
-    def __init__(self, root_directory, *, is_test: bool = False, transform=None):
+    def __init__(
+        self,
+        root_directory,
+        *,
+        is_test: bool = False,
+        transform=None,
+        tta_transforms=None,
+    ):
         self.root_directory = root_directory
         self.is_test = is_test
         self.transform = transform
+        self.tta_transforms = tta_transforms
         self.data = []
 
         if is_test:
@@ -36,8 +45,16 @@ class CarDataset(Dataset):
         if self.is_test:
             image_path = self.data[idx]
             image = Image.open(image_path).convert("RGB")
+
+            if self.tta_transforms is not None:
+                tta_images = []
+                for transform in self.tta_transforms:
+                    tta_images.append(transform(image))
+                return torch.stack(tta_images)
+
             if self.transform:
                 image = self.transform(image)
+
             return image
         else:
             image_path, label = self.data[idx]
