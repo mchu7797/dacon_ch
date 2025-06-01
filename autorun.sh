@@ -15,6 +15,10 @@ unzip -q open.zip
 if [ ! -d "train"] || [ ! -d "test" ]; then
     echo "Error: Dataset folder wan not extracted correctly."
     exit 1
+else
+    echo "Dataset extraction successful. Removing zip file to save space."
+    rm open.zip
+    echo "Removed open.zip"
 fi
 
 echo "Virtual Environment Setup"
