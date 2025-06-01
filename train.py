@@ -154,10 +154,18 @@ def train():
     )
 
     train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=config.batch_size, shuffle=True, num_workers=4, pin_memory=True
+        train_dataset,
+        batch_size=config.batch_size,
+        shuffle=True,
+        num_workers=4,
+        pin_memory=True,
     )
     val_loader = torch.utils.data.DataLoader(
-        val_dataset, batch_size=config.batch_size, shuffle=False, num_workers=4, pin_memory=True
+        val_dataset,
+        batch_size=config.batch_size,
+        shuffle=False,
+        num_workers=4,
+        pin_memory=True,
     )
 
     models = get_models(num_classes=len(class_names))

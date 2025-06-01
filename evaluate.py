@@ -69,7 +69,6 @@ def predict_with_tta(models, tta_images):
     return ensemble_predictions
 
 
-
 def evaluate():
     config = get_config()
     device = "cuda" if torch.cuda.is_available() else "cpu"

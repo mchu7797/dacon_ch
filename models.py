@@ -27,5 +27,5 @@ def get_models(*, num_classes: int) -> list:
             "timm/vit_large_patch14_dinov2.lvd142m",
             pretrained=True,
             num_classes=num_classes,
-        )
+        ),
     ]
