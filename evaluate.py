@@ -119,7 +119,13 @@ def evaluate():
 
     submission = pd.read_csv("sample_submission.csv", encoding="utf-8-sig")
 
-    class_columns = submission.columns[1:]
+    class_columns = list(submission.columns[1:])
+    missing_columns = [col for col in class_columns if col not in predictions.columns]
+    if missing_columns:
+        print(f"Warning: Missing columns in predictions: {missing_columns}")
+        for col in missing_columns:
+            predictions[col] = 0.0  # Fill missing columns with zeros
+
     predictions = predictions[class_columns]
 
     submission[class_columns] = predictions.values
