@@ -13,7 +13,7 @@ echo "Dataset Extraction"
 unzip -q open.zip
 
 if [ ! -d "train"] || [ ! -d "test" ]; then
-    echo "Error: Dataset folder was not extracted correctly."
+    echo "Error: Dataset folder wan not extracted correctly."
     exit 1
 else
     echo "Dataset extraction successful. Removing zip file to save space."
@@ -21,20 +21,18 @@ else
     echo "Removed open.zip"
 fi
 
-echo "Installing UV Package Manager"
+echo "Virtual Environment Setup"
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source $HOME/.local/bin/env
 
-echo "Generating requirements.txt from pyproject.toml"
-uv export --format requirements-txt --output-file requirements.txt
-
-echo "Installing Python Dependencies directly to system"
-pip install -r requirements.txt
+echo "Installing Python Dependencies"
+uv venv
+uv sync
 
 echo "Check GPU Availability"
-python -c "import torch; print('GPU available:', torch.cuda.is_available())"
+uv run python -c "import torch; print('GPU available:', torch.cuda.is_available())"
 
 echo "Running Training and Evaluation"
-python train.py
+uv run train.py
 echo "Training completed. Now running evaluation."
-python evaluate.py
+uv run evaluate.py
