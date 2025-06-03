@@ -224,30 +224,44 @@ def evaluate():
     with torch.no_grad():
         for batch_data in tqdm(test_loader, desc="Evaluating"):
             if config.use_tta:
+                # TTA 사용 시
                 if isinstance(batch_data, tuple) and len(batch_data) == 2:
                     images, brand_features = batch_data
+                    images = images.to(device)
                     brand_features = brand_features.to(device)
-                    probabilities = predict_with_tta(
-                        models, images.to(device), brand_features
-                    )
+                    probabilities = predict_with_tta(models, images, brand_features)
                 else:
-                    images = batch_data
-                    probabilities = predict_with_tta(models, images.to(device))
+                    # batch_data가 텐서인지 확인
+                    if isinstance(batch_data, torch.Tensor):
+                        images = batch_data.to(device)
+                    else:
+                        # 리스트나 다른 형태인 경우 처리
+                        images = torch.stack(batch_data).to(device) if isinstance(batch_data, list) else batch_data
+                        images = images.to(device)
+                    probabilities = predict_with_tta(models, images)
             else:
+                # TTA 미사용 시
                 if isinstance(batch_data, tuple) and len(batch_data) == 2:
                     images, brand_features = batch_data
+                    images = images.to(device)
                     brand_features = brand_features.to(device)
-                    probabilities = predict(models, images.to(device), brand_features)
+                    probabilities = predict(models, images, brand_features)
                 else:
-                    images = batch_data
-                    probabilities = predict(models, images.to(device))
+                    # batch_data가 텐서인지 확인
+                    if isinstance(batch_data, torch.Tensor):
+                        images = batch_data.to(device)
+                    else:
+                        # 리스트나 다른 형태인 경우 처리
+                        images = torch.stack(batch_data).to(device) if isinstance(batch_data, list) else batch_data
+                        images = images.to(device)
+                    probabilities = predict(models, images)
 
             for prob in probabilities.cpu():
                 result = {
                     class_names[i]: prob[i].item() for i in range(len(class_names))
                 }
                 results.append(result)
-
+    
     # 결과를 DataFrame으로 변환
     predictions = pd.DataFrame(results)
 
