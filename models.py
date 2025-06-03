@@ -65,6 +65,11 @@ def get_models(*, num_classes: int, brand_classes: int | None) -> list:
             num_classes=num_classes,
         ),
         timm.create_model(
+            "timm/convnext_large.fb_in22k_ft_in1k",
+            pretrained=True,
+            num_classes=num_classes,
+        ),
+        timm.create_model(
             "timm/tf_efficientnetv2_l.in21k_ft_in1k",
             pretrained=True,
             num_classes=num_classes,
