@@ -20,7 +20,7 @@ print("Using device:", device)
 CFG = {
     "IMG_SIZE": 224,
     "BATCH_SIZE": 16,
-    "EPOCHS": 20,
+    "EPOCHS": 25,
     "LEARNING_RATE": 1e-4,
     "SEED": 42,
 }

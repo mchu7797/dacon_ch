@@ -20,7 +20,7 @@ if [ $? -ne 0 ]; then
 fi
 
 
-if [ ! -d "train"] || [ ! -d "test" ]; || [! -d "sub_models/car_type_train" ] then
+if [ ! -d "train"] || [ ! -d "test" ] || [! -d "sub_models/car_type_train" ]; then
     echo "Error: Dataset folder wan not extracted correctly."
     exit 1
 else
@@ -46,7 +46,7 @@ uv run python -c "import torch; print('GPU available:', torch.cuda.is_available(
 
 echo "Running Car Type Classification"
 cd sub_models
-uv run car_type_classification.py
+uv run car_type_classifier.py
 cd ..
 
 echo "Running Training and Evaluation"
