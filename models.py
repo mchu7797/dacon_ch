@@ -30,9 +30,9 @@ class AdvancedModel(nn.Module):
             nn.Linear(combined_feature_dim // 4, self.num_classes),
         )
 
-    def forward(self, x: torch.Tensor, brand_probs: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, brand_logits: torch.Tensor) -> torch.Tensor:
         image_features = self.base_model(x)
-        brand_features = F.relu(self.brand_fc(brand_probs))
+        brand_features = F.relu(self.brand_fc(brand_logits))
 
         combined_features = torch.cat((image_features, brand_features), dim=1)
         output = self.final_classifier(combined_features)
