@@ -223,38 +223,37 @@ def evaluate():
 
     with torch.no_grad():
         for batch_data in tqdm(test_loader, desc="Evaluating"):
-            if config.use_tta:
-                # TTA 사용 시
-                if isinstance(batch_data, tuple) and len(batch_data) == 2:
-                    images, brand_features = batch_data
-                    images = images.to(device)
-                    brand_features = brand_features.to(device)
+            # 데이터 형태 파악
+            if isinstance(batch_data, (list, tuple)) and len(batch_data) == 2:
+                # [images, brand_features] 형태
+                images, brand_features = batch_data
+                images = images.to(device)
+                brand_features = brand_features.to(device)
+                
+                if config.use_tta:
                     probabilities = predict_with_tta(models, images, brand_features)
                 else:
-                    # batch_data가 텐서인지 확인
-                    if isinstance(batch_data, torch.Tensor):
-                        images = batch_data.to(device)
-                    else:
-                        # 리스트나 다른 형태인 경우 처리
-                        images = torch.stack(batch_data).to(device) if isinstance(batch_data, list) else batch_data
-                        images = images.to(device)
-                    probabilities = predict_with_tta(models, images)
-            else:
-                # TTA 미사용 시
-                if isinstance(batch_data, tuple) and len(batch_data) == 2:
-                    images, brand_features = batch_data
-                    images = images.to(device)
-                    brand_features = brand_features.to(device)
                     probabilities = predict(models, images, brand_features)
+                    
+            elif isinstance(batch_data, torch.Tensor):
+                # 순수 이미지 텐서
+                images = batch_data.to(device)
+                
+                if config.use_tta:
+                    probabilities = predict_with_tta(models, images)
                 else:
-                    # batch_data가 텐서인지 확인
-                    if isinstance(batch_data, torch.Tensor):
-                        images = batch_data.to(device)
-                    else:
-                        # 리스트나 다른 형태인 경우 처리
-                        images = torch.stack(batch_data).to(device) if isinstance(batch_data, list) else batch_data
-                        images = images.to(device)
                     probabilities = predict(models, images)
+                    
+            else:
+                # 예상치 못한 형태
+                print(f"⚠️ Unexpected batch_data type: {type(batch_data)}")
+                if hasattr(batch_data, '__len__'):
+                    print(f"Length: {len(batch_data)}")
+                    if len(batch_data) > 0:
+                        print(f"First item type: {type(batch_data[0])}")
+                        if hasattr(batch_data[0], 'shape'):
+                            print(f"First item shape: {batch_data[0].shape}")
+                continue
 
             for prob in probabilities.cpu():
                 result = {
