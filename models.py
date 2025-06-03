@@ -32,6 +32,11 @@ class AdvancedModel(nn.Module):
 
     def forward(self, x: torch.Tensor, brand_logits: torch.Tensor) -> torch.Tensor:
         image_features = self.base_model(x)
+
+        if len(image_features.shape) == 4:
+            image_features = F.adaptive_avg_pool2d(image_features, (1, 1))
+            image_features = image_features.view(image_features.size(0), -1)
+
         brand_features = F.relu(self.brand_fc(brand_logits))
 
         combined_features = torch.cat((image_features, brand_features), dim=1)
@@ -42,7 +47,7 @@ class AdvancedModel(nn.Module):
 def get_models(*, num_classes: int, brand_classes: int | None) -> list:
     base_models = [
         timm.create_model(
-            "timm/vit_large_patch16_224.augreg_in21k_ft_in1k",
+            "timm/convnextv2_large.fcmae_ft_in22k_in1k",
             pretrained=True,
             num_classes=num_classes,
         ),
