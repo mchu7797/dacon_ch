@@ -32,7 +32,13 @@ uv sync
 echo "Check GPU Availability"
 uv run python -c "import torch; print('GPU available:', torch.cuda.is_available())"
 
+echo "Running Car Type Classification"
+cd sub_models
+uv run car_type_classification.py
+cd ..
+
 echo "Running Training and Evaluation"
 uv run train.py
+
 echo "Training completed. Now running evaluation."
 uv run evaluate.py

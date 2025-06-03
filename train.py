@@ -21,6 +21,7 @@ def train_model(
     train_loader: DataLoader,
     val_loader: DataLoader,
     device_name: str,
+    model_index: int = 0,
 ):
     best_logloss = float("inf")
     patience_counts = 0
@@ -119,7 +120,7 @@ def train_model(
 
             torch.save(
                 model.state_dict(),
-                f"{config.model_directory}/best_{model.base_model.__class__.__name__}.pth",
+                f"{config.model_directory}/best_{model_index}.pth",
             )
             print(f"Best model saved with Log Loss: {best_logloss:.4f}")
         elif config.early_stopping_enabled:
@@ -204,10 +205,10 @@ def train():
         else None,
     )
 
-    for model in models:
+    for i, model in enumerate(models):
         model.to(device)
         print(f"Training model: {model.base_model.__class__.__name__}")
-        train_model(config, model, class_names, train_loader, val_loader, device)
+        train_model(config, model, class_names, train_loader, val_loader, device, i)
 
 
 if __name__ == "__main__":
