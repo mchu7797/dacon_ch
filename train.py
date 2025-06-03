@@ -32,13 +32,23 @@ def train_model(
         model.train()
         train_loss = 0.0
 
-        for images, labels in tqdm(
+        for batch in tqdm(
             train_loader, desc=f"[Epoch {epoch + 1}/{config.epochs}] Training"
         ):
-            images, labels = images.to(device_name), labels.to(device_name)
+            if len(batch) == 3:
+                images, brand_logits, labels = batch
+                images, brand_logits, labels = (
+                    images.to(device_name),
+                    brand_logits.to(device_name),
+                    labels.to(device_name),
+                )
+                outputs = model(images, brand_logits)
+            else:
+                images, labels = batch
+                images, labels = images.to(device_name), labels.to(device_name)
+                outputs = model(images)
 
             optimizer.zero_grad()
-            outputs = model(images)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
@@ -56,12 +66,22 @@ def train_model(
         all_labels = []
 
         with torch.no_grad():
-            for images, labels in tqdm(
+            for batch in tqdm(
                 val_loader, desc=f"[Epoch {epoch + 1}/{config.epochs}] Validation"
             ):
-                images, labels = images.to(device_name), labels.to(device_name)
+                if len(batch) == 3:
+                    images, brand_logits, labels = batch
+                    images, brand_logits, labels = (
+                        images.to(device_name),
+                        brand_logits.to(device_name),
+                        labels.to(device_name),
+                    )
+                    outputs = model(images, brand_logits)
+                else:
+                    images, labels = batch
+                    images, labels = images.to(device_name), labels.to(device_name)
+                    outputs = model(images)
 
-                outputs = model(images)
                 loss = criterion(outputs, labels)
                 val_loss += loss.item()
 
@@ -124,7 +144,12 @@ def train():
 
     fix_random_seed(config.seed)
 
-    full_dataset = CarDataset(config.train_directory, transform=None)
+    full_dataset = CarDataset(
+        config.train_directory,
+        config.brand_predictions_path,
+        config.brand_info_path,
+        transform=None,
+    )
     labels = [label for _, label in full_dataset.data]
     class_names = full_dataset.classes
 
@@ -142,6 +167,8 @@ def train():
         CarDataset(
             config.train_directory,
             transform=get_train_transform(config.image_size, config.mean, config.std),
+            brand_predictions_path=config.brand_predictions_path,
+            brand_info_path=config.brand_info_path,
         ),
         indices=train_idx,
     )
@@ -149,6 +176,8 @@ def train():
         CarDataset(
             config.train_directory,
             transform=get_val_transform(config.image_size, config.mean, config.std),
+            brand_predictions_path=config.brand_predictions_path,
+            brand_info_path=config.brand_info_path,
         ),
         indices=val_idx,
     )
@@ -168,7 +197,12 @@ def train():
         pin_memory=True,
     )
 
-    models = get_models(num_classes=len(class_names))
+    models = get_models(
+        num_classes=len(class_names),
+        brand_classes=len(full_dataset.brand_classes)
+        if full_dataset.brand_classes
+        else None,
+    )
 
     for model in models:
         model.to(device)

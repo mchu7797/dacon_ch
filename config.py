@@ -7,6 +7,10 @@ class Config:
     test_directory: str = "test"
     model_directory: str = "models"
 
+    brand_predictions_path: str = "./sub_models/brand_predictions.pkl"
+    brand_info_path: str = "./sub_models/brand_info.pkl"
+    brand_model_path: str = "./sub_models/brand_model.pth"
+
     early_stopping_enabled: bool = True
     early_stopping_patience: int = 5
     early_stopping_minimum_delta: float = 0.0002

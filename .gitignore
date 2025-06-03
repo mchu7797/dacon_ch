@@ -128,6 +128,7 @@ wheels/
 .venv
 
 # datasets
+/sub_models/car_type_train/*
 test/*
 train/*
 sample_submission.csv
