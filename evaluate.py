@@ -199,14 +199,14 @@ def evaluate():
     # 모델 가중치 로드
     for i, model in enumerate(models):
         model_path = os.path.join(
-            config.model_directory, f"best_{model.__class__.__name__}.pth"
+            config.model_directory, f"best_{model.base_model.__class__.__name__}.pth"
         )
         if os.path.exists(model_path):
             model.load_state_dict(torch.load(model_path, map_location=device))
-            print(f"✅ Model {model.__class__.__name__} loaded from {model_path}")
+            print(f"✅ Model {model.base_model.__class__.__name__} loaded from {model_path}")
         else:
             print(
-                f"⚠️  Model {model.__class__.__name__} weights not found at {model_path}"
+                f"⚠️  Model {model.base_model.__class__.__name__} weights not found at {model_path}"
             )
 
         model.to(device)

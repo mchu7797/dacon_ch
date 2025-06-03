@@ -119,7 +119,7 @@ def train_model(
 
             torch.save(
                 model.state_dict(),
-                f"{config.model_directory}/best_{model.__class__.__name__}.pth",
+                f"{config.model_directory}/best_{model.base_model.__class__.__name__}.pth",
             )
             print(f"Best model saved with Log Loss: {best_logloss:.4f}")
         elif config.early_stopping_enabled:
@@ -206,7 +206,7 @@ def train():
 
     for model in models:
         model.to(device)
-        print(f"Training model: {model.__class__.__name__}")
+        print(f"Training model: {model.base_model.__class__.__name__}")
         train_model(config, model, class_names, train_loader, val_loader, device)
 
 
