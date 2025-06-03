@@ -44,15 +44,23 @@ class AdvancedModel(nn.Module):
         return output
 
 
+class BrandModel(nn.Module):
+    def __init__(self, num_brands):
+        super(BrandModel, self).__init__()
+        self.model = timm.create_model(
+            "timm/convnextv2_base.fcmae_ft_in22k_in1k",
+            pretrained=True,
+            num_classes=num_brands,
+        )
+
+    def forward(self, x):
+        return self.model(x)
+
+
 def get_models(*, num_classes: int, brand_classes: int | None) -> list:
     base_models = [
         timm.create_model(
             "timm/convnextv2_large.fcmae_ft_in22k_in1k",
-            pretrained=True,
-            num_classes=num_classes,
-        ),
-        timm.create_model(
-            "timm/convnext_large.fb_in22k_ft_in1k",
             pretrained=True,
             num_classes=num_classes,
         ),

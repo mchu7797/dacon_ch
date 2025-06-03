@@ -7,11 +7,12 @@ import pickle
 
 from config import get_config
 from datasets import CarDataset
-from models import get_models
+from models import get_models, BrandModel
 from transforms import get_val_transform, get_tta_transforms
 
 
-def load_brand_model(config):
+
+def load_brand_model(config, device):
     """브랜드 분류 모델 로드"""
     brand_model_path = config.brand_model_path
     brand_info_path = config.brand_info_path
@@ -29,11 +30,7 @@ def load_brand_model(config):
     print(f"🏷️  브랜드 목록: {brand_info['brands']}")
 
     # 브랜드 모델 생성 및 로드
-    brand_model = timm.create_model(
-        "timm/convnextv2_base.fcmae_ft_in22k_in1k",
-        pretrained=False,
-        num_classes=num_brands,
-    )
+    brand_model = BrandModel(num_brands).to(device)
 
     # 가중치 로드
     brand_model.load_state_dict(torch.load(brand_model_path, map_location="cpu"))
@@ -155,7 +152,7 @@ def evaluate():
         print(f"Number of brand classes: {len(full_dataset.brand_classes)}")
 
     # 브랜드 모델 로드
-    brand_model, brand_info = load_brand_model(config)
+    brand_model, brand_info = load_brand_model(config, device)
 
     # 테스트 데이터셋 로드
     if config.use_tta:
