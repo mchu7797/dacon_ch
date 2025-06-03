@@ -8,17 +8,29 @@ apt update && apt install -y unzip curl
 echo "Dataset Download"
 pip install gdown
 python -m gdown https://drive.google.com/uc?id=11ZQKv7xwdIiFZMLH6ljL4ZGJbeBcoltw
+python -m gdown https://drive.google.com/uc?id=1rH3d6-CITwocpDaU1jePP_3bwxXM4von
 
 echo "Dataset Extraction"
 unzip -q open.zip
+unzip -q train_car_type.zip -d sub_models/car_type_train
 
-if [ ! -d "train"] || [ ! -d "test" ]; then
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to extract open.zip"
+    exit 1
+fi
+
+
+if [ ! -d "train"] || [ ! -d "test" ]; || [! -d "sub_models/car_type_train" ] then
     echo "Error: Dataset folder wan not extracted correctly."
     exit 1
 else
     echo "Dataset extraction successful. Removing zip file to save space."
+    
     rm open.zip
     echo "Removed open.zip"
+
+    rm train_car_type.zip
+    echo "Removed train_car_type.zip"
 fi
 
 echo "Virtual Environment Setup"
