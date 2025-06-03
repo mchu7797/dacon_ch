@@ -63,15 +63,14 @@ def generate_test_brand_predictions(brand_model, brand_info, test_dataset, devic
         for batch_idx, batch_data in enumerate(
             tqdm(test_loader, desc="Generating brand predictions")
         ):
+            # 테스트 데이터는 이미지만 있음
             if test_dataset.tta_transforms is not None:
-                # TTA 사용 시
-                images, brand_features = batch_data
+                # TTA 사용 시: [batch_size, num_tta, channels, height, width]
+                images = batch_data
                 images = images.mean(dim=1)  # TTA 이미지들의 평균
             else:
-                if len(batch_data) == 2:
-                    images, brand_features = batch_data
-                else:
-                    images = batch_data
+                # 일반적인 경우: [batch_size, channels, height, width]
+                images = batch_data
 
             images = images.to(device)
             outputs = brand_model(images)
