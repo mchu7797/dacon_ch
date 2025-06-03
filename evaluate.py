@@ -2,7 +2,6 @@ import os
 import pandas as pd
 import torch
 from tqdm import tqdm
-import timm
 import pickle
 
 from config import get_config
