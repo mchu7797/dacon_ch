@@ -7,8 +7,8 @@ apt update && apt install -y unzip curl
 
 echo "Dataset Download"
 pip install gdown
-python -m gdown https://drive.google.com/uc?id=11ZQKv7xwdIiFZMLH6ljL4ZGJbeBcoltw
-python -m gdown https://drive.google.com/uc?id=1rH3d6-CITwocpDaU1jePP_3bwxXM4von
+python -m gdown https://drive.google.com/uc?id=1cDW3hdznFoB7sAu7y2NR_OVaaTXXue1l
+python -m gdown https://drive.google.com/uc?id=1eFGwE_N7BAixXqzB4JOLt8cyRltUDCoO
 
 echo "Dataset Extraction"
 unzip -q open.zip
