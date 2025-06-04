@@ -23,11 +23,7 @@ class AdvancedModel(nn.Module):
         self.final_classifier = nn.Sequential(
             nn.Linear(combined_feature_dim, combined_feature_dim // 2),
             nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(combined_feature_dim // 2, combined_feature_dim // 4),
-            nn.ReLU(),
-            nn.Dropout(0.2),
-            nn.Linear(combined_feature_dim // 4, self.num_classes),
+            nn.Linear(combined_feature_dim // 2, self.num_classes),
         )
 
     def forward(self, x: torch.Tensor, brand_logits: torch.Tensor) -> torch.Tensor:
