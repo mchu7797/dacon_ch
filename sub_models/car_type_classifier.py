@@ -19,8 +19,8 @@ print("Using device:", device)
 # Hyperparameter Setting
 CFG = {
     "IMG_SIZE": 224,
-    "BATCH_SIZE": 16,
-    "EPOCHS": 25,
+    "BATCH_SIZE": 64,
+    "EPOCHS": 4,
     "LEARNING_RATE": 1e-4,
     "SEED": 42,
 }
