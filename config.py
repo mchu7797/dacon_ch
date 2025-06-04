@@ -19,7 +19,7 @@ class Config:
     tta_batch_size_divisor: int = 4
 
     image_size: int = 224
-    batch_size: int = 128
+    batch_size: int = 64
     epochs: int = 25
     learning_rate: float = 3e-4
     seed: int = 42
