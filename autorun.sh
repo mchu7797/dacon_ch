@@ -7,17 +7,15 @@ apt update && apt install -y unzip curl
 
 echo "Dataset Download"
 pip install gdown
-python -m gdown https://drive.google.com/uc?id=1GMwDmgm3MmC_IV2AOpx0qGFLYKwVuNEC
+wget https://archive.greatmandu.xyz/dataset.zip/dataset.zip
 
 echo "Dataset Extraction"
-unzip -q open.zip
-unzip -q train_car_type.zip -d sub_models/car_type_train
+unzip -q dataset.zip
 
 if [ $? -ne 0 ]; then
-    echo "Error: Failed to extract open.zip"
+    echo "Error: Failed to extract dataset.zip"
     exit 1
 fi
-
 
 if [ ! -d "train"] || [ ! -d "test" ] || [! -d "sub_models/car_type_train" ]; then
     echo "Error: Dataset folder wan not extracted correctly."
