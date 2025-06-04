@@ -6,7 +6,6 @@ echo "System Update And Package Installation"
 apt update && apt install -y unzip curl
 
 echo "Dataset Download"
-pip install gdown
 wget https://archive.greatmandu.xyz/dataset.zip/dataset.zip
 
 echo "Dataset Extraction"
@@ -17,17 +16,15 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-if [ ! -d "train"] || [ ! -d "test" ] || [! -d "sub_models/car_type_train" ]; then
-    echo "Error: Dataset folder wan not extracted correctly."
+# 문법 오류 수정: 공백 추가, 문자열 비교 수정
+if [ ! -d "train" ] || [ ! -d "test" ] || [ ! -d "sub_models/car_type_train" ]; then
+    echo "Error: Dataset folder was not extracted correctly."
     exit 1
 else
     echo "Dataset extraction successful. Removing zip file to save space."
     
-    rm open.zip
-    echo "Removed open.zip"
-
-    rm train_car_type.zip
-    echo "Removed train_car_type.zip"
+    rm dataset.zip
+    echo "Removed dataset.zip"
 fi
 
 echo "Virtual Environment Setup"
@@ -43,11 +40,13 @@ uv run python -c "import torch; print('GPU available:', torch.cuda.is_available(
 
 echo "Running Car Type Classification"
 cd sub_models
-uv run car_type_classifier.py
+uv run python car_type_classifier.py
 cd ..
 
 echo "Running Training and Evaluation"
-uv run train.py
+uv run python train.py
 
 echo "Training completed. Now running evaluation."
-uv run evaluate.py
+uv run python evaluate.py
+
+echo "✅ All processes completed successfully!"
