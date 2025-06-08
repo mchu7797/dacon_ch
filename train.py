@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import log_loss
 from tqdm import tqdm
+from torch.amp import GradScaler, autocast
 
 from config import Config, get_config
 from models import get_models
@@ -28,6 +29,7 @@ def train_model(
 
     criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    scaler = GradScaler("cuda", enabled=torch.cuda.is_available())
 
     for epoch in range(config.epochs):
         model.train()
@@ -39,10 +41,14 @@ def train_model(
             images, labels = images.to(device_name), labels.to(device_name)
 
             optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
+            
+            with autocast("cuda", enabled=torch.cuda.is_available()):
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+            
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
 
             train_loss += loss.item()
 
