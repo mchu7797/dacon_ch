@@ -45,7 +45,7 @@ uv run python -c "import torch; print('GPU available:', torch.cuda.is_available(
 
 # Preprocessing: Merging class folders
 echo "Preprocessing: Merging class folders"
-uv run preprocess_data.py
+uv run class_merge.py
 
 # Running Training and Evaluation
 echo "Running Training and Evaluation"
