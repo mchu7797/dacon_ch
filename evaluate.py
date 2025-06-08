@@ -8,29 +8,35 @@ from config import get_config
 from datasets import CarDataset
 from models import get_models
 from transforms import get_val_transform, get_tta_transforms
+import timm
 
 
 def load_trained_models(config, num_classes, device):
-    base_models = get_models(num_classes=num_classes)
+    base_models_info = get_models(num_classes=num_classes)
     loaded_models = []
 
-    for model in base_models:
-        model_name = model.__class__.__name__
-        model_path = f"{config.model_directory}/best_{model_name}.pth"
+    # K-Fold 루프
+    for fold in range(config.n_splits):
+        print(f"--- Loading models for Fold {fold} ---")
+        # 모델 종류 루프
+        for model_template in base_models_info:
+            model_name = model_template.__class__.__name__
+            # 각 fold에 맞는 모델 경로
+            model_path = f"{config.model_directory}/best_{model_name}_fold{fold}.pth"
 
-        if os.path.exists(model_path):
-            model.load_state_dict(torch.load(model_path, map_location=device))
-            model.to(device)
-            model.eval()
-            loaded_models.append(model)
-            print(f"Loaded model: {model_name} from {model_path}")
-        else:
-            model.to(device)
-            model.eval()
-            loaded_models.append(model)
-            print(
-                f"Model {model_name} not found at {model_path}, using untrained model."
-            )
+            if os.path.exists(model_path):
+                # 새로운 모델 인스턴스를 생성하여 가중치 로드
+                model = timm.create_model(model_template.default_cfg['architecture'], num_classes=num_classes) # 모델 재생성
+                model.load_state_dict(torch.load(model_path, map_location=device))
+                model.to(device)
+                model.eval()
+                loaded_models.append(model)
+                print(f"Loaded model: {model_name} from {model_path}")
+            else:
+                print(f"[경고] Model not found at {model_path}, skipping.")
+
+    if not loaded_models:
+        raise FileNotFoundError("No trained models were found. Please run train.py first.")
 
     return loaded_models
 
@@ -116,13 +122,12 @@ def evaluate():
                 results.append(result)
 
     predictions = pd.DataFrame(results)
-
     submission = pd.read_csv("sample_submission.csv", encoding="utf-8-sig")
 
-    class_columns = submission.columns[1:]
-    predictions = predictions[class_columns]
+    final_class_columns = submission.columns[1:]
+    final_predictions = predictions.reindex(columns=final_class_columns, fill_value=1e-15)
 
-    submission[class_columns] = predictions.values
+    submission[final_class_columns] = final_predictions
     submission.to_csv("submission.csv", index=False, encoding="utf-8-sig")
 
     print("Submission file created: submission.csv")

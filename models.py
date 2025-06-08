@@ -4,12 +4,12 @@ import timm
 def get_models(*, num_classes: int) -> list:
     return [
         timm.create_model(
-            "timm/vit_large_patch16_224.augreg_in21k_ft_in1k",
+            "timm/maxvit_large_tf_384.in21k_ft_in1kk",
             pretrained=True,
             num_classes=num_classes,
         ),
         timm.create_model(
-            "timm/convnext_large.fb_in22k_ft_in1k",
+            "timm/convnextv2_base.fcmae_ft_in22k_in1k_384",
             pretrained=True,
             num_classes=num_classes,
         ),

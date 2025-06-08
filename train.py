@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Subset
 from torch.utils.data import DataLoader
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import log_loss
 from tqdm import tqdm
 
@@ -25,7 +25,7 @@ def train_model(
     best_logloss = float("inf")
     patience_counts = 0
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
 
     for epoch in range(config.epochs):
@@ -118,63 +118,53 @@ def train():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     print(f"Using device: {device}")
-    if device == "cuda":
-        print(f"GPU: {torch.cuda.get_device_name()}")
-        print(f"Memory allocated: {torch.cuda.memory_allocated() / 1024**3:.2f} GB")
-
     fix_random_seed(config.seed)
 
+    # 데이터셋은 transform 없이 한 번만 로드하여 인덱싱에 사용
     full_dataset = CarDataset(config.train_directory, transform=None)
     labels = [label for _, label in full_dataset.data]
     class_names = full_dataset.classes
 
     show_dataset_info(full_dataset)
-    print(f"Number of classes: {len(class_names)}")
 
-    train_idx, val_idx = train_test_split(
-        range(len(full_dataset)),
-        test_size=0.2,
-        stratify=labels,
-        random_state=config.seed,
-    )
+    # Stratified K-Fold 설정
+    skf = StratifiedKFold(n_splits=config.n_splits, shuffle=True, random_state=config.seed)
 
-    train_dataset = Subset(
-        CarDataset(
-            config.train_directory,
-            transform=get_train_transform(config.image_size, config.mean, config.std),
-        ),
-        indices=train_idx,
-    )
-    val_dataset = Subset(
-        CarDataset(
-            config.train_directory,
-            transform=get_val_transform(config.image_size, config.mean, config.std),
-        ),
-        indices=val_idx,
-    )
+    # K-Fold 루프 시작
+    for fold, (train_idx, val_idx) in enumerate(skf.split(range(len(full_dataset)), labels)):
+        print(f"\n===== Starting Fold {fold} =====\n")
 
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=config.batch_size,
-        shuffle=True,
-        num_workers=4,
-        pin_memory=True,
-    )
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset,
-        batch_size=config.batch_size,
-        shuffle=False,
-        num_workers=4,
-        pin_memory=True,
-    )
+        # 각 Fold에 맞는 데이터셋과 DataLoader 생성
+        train_dataset = Subset(
+            CarDataset(
+                config.train_directory,
+                transform=get_train_transform(config.image_size, config.mean, config.std),
+            ),
+            indices=train_idx,
+        )
+        val_dataset = Subset(
+            CarDataset(
+                config.train_directory,
+                transform=get_val_transform(config.image_size, config.mean, config.std),
+            ),
+            indices=val_idx,
+        )
 
-    models = get_models(num_classes=len(class_names))
+        train_loader = DataLoader(
+            train_dataset, batch_size=config.batch_size, shuffle=True, num_workers=4, pin_memory=True
+        )
+        val_loader = DataLoader(
+            val_dataset, batch_size=config.batch_size, shuffle=False, num_workers=4, pin_memory=True
+        )
 
-    for model in models:
-        model.to(device)
-        print(f"Training model: {model.__class__.__name__}")
-        train_model(config, model, class_names, train_loader, val_loader, device)
+        # 각 Fold마다 새로운 모델을 초기화하여 학습
+        models_for_fold = get_models(num_classes=len(class_names))
 
+        for model in models_for_fold:
+            model.to(device)
+            print(f"Training model: {model.__class__.__name__} for Fold {fold}")
+            # train_model 함수에 fold 번호 전달
+            train_model(config, model, class_names, train_loader, val_loader, device, fold)
 
 if __name__ == "__main__":
     train()
