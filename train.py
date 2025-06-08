@@ -21,6 +21,7 @@ def train_model(
     train_loader: DataLoader,
     val_loader: DataLoader,
     device_name: str,
+    fold: int = 0,
 ):
     best_logloss = float("inf")
     patience_counts = 0
@@ -99,9 +100,9 @@ def train_model(
 
             torch.save(
                 model.state_dict(),
-                f"{config.model_directory}/best_{model.__class__.__name__}.pth",
+                f"{config.model_directory}/best_{model.__class__.__name__}_fold{fold}.pth",
             )
-            print(f"Best model saved with Log Loss: {best_logloss:.4f}")
+            print(f"Best model for fold {fold} saved with Log Loss: {best_logloss:.4f}")
         elif config.early_stopping_enabled:
             patience_counts += 1
             print(

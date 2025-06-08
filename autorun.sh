@@ -6,8 +6,7 @@ echo "System Update And Package Installation"
 apt update && apt install -y unzip curl
 
 echo "Dataset Download"
-pip install gdown
-python -m gdown https://drive.google.com/uc?id=11ZQKv7xwdIiFZMLH6ljL4ZGJbeBcoltw
+wget https://cfiles.dacon.co.kr/competitions/236493/open.zip -O open.zip
 
 echo "Dataset Extraction"
 unzip -q open.zip
